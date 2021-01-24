@@ -1,0 +1,287 @@
+/*
+ * @Author: wangzhongyi
+ * @Date: 2021-01-12 13:34:49
+ * @LastEditTime: 2021-01-14 15:25:36
+ * @LastEditors: Please set LastEditors
+ * @Description: webpack 基本配置学习
+ * @FilePath: \vue源码实现d:\Backup\桌面\常用重要文件\StudySpace\webpack_study\webpack.config.js
+ */
+const path = require('path');
+const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const EslintPlugin = require('eslint-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HappyPack = require('happypack');
+
+/*
+module.exports = {
+    mode: 'development',
+    entry: './src/index.js',
+    output: {
+        filename: 'index.js',
+        path: path.resolve(__dirname, 'dist')
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: './src/index.html',
+            filename: 'index.html'
+        }),
+        new MiniCssExtractPlugin({
+            filename: 'main.css'
+        }),
+        new EslintPlugin(),
+        new webpack.ProvidePlugin({
+            '$': 'jquery'
+        })
+    ],
+    module: {
+        rules: [
+            { test: /\.(css|less)$/, use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'less-loader'] },
+            {
+                test: /\.js$/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: [
+                            '@babel/preset-env'
+                        ],
+                        plugins: [
+                            '@babel/plugin-transform-runtime'
+                        ],
+                        exclude: /node_modules/,
+                        include: path.resolve(__dirname, 'src')
+                    }
+                }
+            },
+            { test: /\.(png|jpg|jpeg|gif)$/, use: 'url-loader?limit=1024' },
+            { test: /\.html$/, use: 'html-loader' }
+        ]
+    },
+    optimization: {
+        minimizer: [
+            new CssMinimizerPlugin(),
+            new OptimizeCssAssetsPlugin(),
+            new UglifyJsPlugin({
+                cache: true,
+                parallel: true,
+                sourceMap: true
+            })
+        ]
+    },
+    externals: {
+        'jquery': '$'
+    }
+}
+*/
+module.exports = {
+    // mode: 'development', // development production
+    // entry: ['@babel/polyfill', './src/index.js'], // 入口
+    entry: {
+        home: './src/index.js',
+        other: './src/other.js'
+    },
+    target: 'web',
+    devServer: {
+        host: '127.0.0.1',
+        port: 3000,
+        progress: true,
+        hot: true,
+        inline: true,
+        open: false,
+        compress: true, // 压缩
+        contentBase: './dist', // 指向的目录
+        proxy: { // 配置跨域代理
+            // '/api': 'http://localhost:5000'
+            '/api': {
+                target: 'http://localhost:5000',
+                changeOrigin: true,
+                pathRewrite: {
+                    '^/api': ''
+                }
+            }
+        }
+    },
+    resolve: {
+        modules: [path.resolve(__dirname, 'node_modules')],
+        extensions: ['.js', '.json', '.css'],
+        alias: {
+            'bootstrap': 'bootstrap/dist/css/bootstrap.css'
+        },
+        mainFields: ['main', 'style'], // 入口主字段顺序
+        // manFiles: ['index.js'],
+    },
+    output: {
+        // [name] home, other
+        filename: '[name][hash:5].js', // 打包后的文件名 [hash:5] 添加 5 位的 hash 戳，防止浏览器缓存和文件覆盖
+        path: path.resolve(__dirname, 'dist'), // 打包后的输出路径 路径必须是一个绝对路径
+        // publicPath: '/static'
+        // publicPath: './' //指定打包后的资源引用使用相对路径(在本地开发的时候不要打开)
+    },
+    module: {
+        noParse: /jquery/,
+        rules: [
+            // {test: /\.css$/, use: ['style-loader', 'css-loader']},
+            // {test: /\.less$/, use: ['style-loader', 'css-loader', 'less-loader']}
+            // {
+            //     test: /\.css$/,
+            //     use: [{
+            //         loader: MiniCssExtractPlugin.loader,
+            //         options: {
+            //             // 打包后的 css 文件相对于打包后的根路径dist的相对路径
+            //             publicPath: '../'
+            //         }
+            //     }, 'css-loader', 'postcss-loader']
+            // },
+            {
+                test: /\.(c|le)ss$/,
+                use: [{
+                    loader: MiniCssExtractPlugin.loader,
+                    options: {
+                        // 打包后的 css 文件相对于打包后的根路径dist的相对路径
+                        publicPath: '../'
+                    }
+                }, 'css-loader', 'postcss-loader', 'less-loader']
+            },
+
+            {
+                test: /\.js$/,
+                use: 'HappyPack/loader?id=babel',
+                // use: {
+                //     loader: 'babel-loader',
+                //     options: { // 用 babel-loader 将 es6 转 es5
+                //         presets: [
+                //             '@babel/preset-env'
+                //         ],
+                //         plugins: [
+                //             '@babel/plugin-transform-runtime'
+                //         ],
+                //     }
+                // },
+                exclude: /node_modules/,
+                include: path.resolve(__dirname, 'src')
+            },
+            // {test: require.resolve('jquery'), loader: 'expose-loader', options: {exposes: ['$', 'jquery']}}
+            { test: /\.(png|jpg|gif|jpeg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'img/', esModule: false } } },
+            {
+                test: /\.html$/i,
+                use: {
+                    loader: 'html-loader',
+                    options: {
+                        attributes: {
+                            list: [{
+                                tag: 'img',
+                                attribute: 'src',
+                                type: 'src'
+                            }]
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    // externals: {
+    //     'jquery': '$'
+    // },
+    // 1) source-map 源码映射，会单独生成一个 sourcemap 文件，出错了会标识当前出错的行和列
+    // 2) eval-source-map 不会单独生成映射文件，集成在打包后的文件中，出错会标识行和列
+    // 3) cheap-module-source-map 会生成单独的映射文件，出错会标识行，但不会标识列
+    // 4) cheap-module-eval-source-map 不会生成单独的映射文件，出错会标识行，但不会标识列
+    // devtool: 'nosources-source-map', // 增加映射文件，可以帮我们调试源代码
+    // 放所有 webpack 插件
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: './src/index.html',
+            filename: 'index.html',
+            minify: { // 让打包后的 html 也进行压缩
+                removeAttributeQuotes: true, // 删除 html 属性多余空格
+                collapseWhitespace: true, // 一行展示
+            },
+            hash: true, // 添加 hash 戳
+            // chunks: ['home']
+        }),
+        /* new HtmlWebpackPlugin({
+            template: './src/index.html',
+            filename: 'other.html',
+            minify: { // 让打包后的 html 也进行压缩
+                removeAttributeQuotes: true, // 删除 html 属性多余空格
+                collapseWhitespace: true, // 一行展示
+            },
+            hash: true, // 添加 hash 戳
+            chunks: ['other']
+        }), */
+        new MiniCssExtractPlugin({
+            filename: 'css/main.css', // 抽离出去的 css 叫什么名字
+        }),
+        // new EslintPlugin(),
+        new webpack.ProvidePlugin({ // 将 $ 注入每个模块中
+            '$': 'jquery'
+        }),
+        new CleanWebpackPlugin(), // 在打包出来之前先清除 dist 目录
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: './src/doc', to: './doc' },
+                { from: './src/dll', to: './dll' }
+            ],
+            options: {
+                concurrency: 100, // 并发 100
+            }
+        }),
+        new webpack.DefinePlugin({
+            Auther: JSON.stringify('王钟毅'),
+            IsGood: 'true'
+        }),
+        new HappyPack({
+            id: 'babel',
+            loaders: [{
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        '@babel/preset-env',
+                        '@babel/preset-react'
+                    ],
+                    plugins: [
+                        '@babel/plugin-transform-runtime'
+                    ]
+                }
+            }]
+        }),
+        // 配置动态连接库寻找的 清单文件
+        new webpack.DllReferencePlugin({
+            manifest: path.resolve(__dirname, 'src/dll', 'manifest.json')
+        }),
+        // new webpack.HotModuleReplacementPlugin(), // 热更新插件
+    ],
+    /* 开启压缩项 */
+    optimization: {
+        minimizer: [
+            new CssMinimizerPlugin(), // 压缩 css
+            new OptimizeCssAssetsPlugin(), // 压缩 js
+            new UglifyJsPlugin({
+                cache: true,
+                parallel: true, // 开启多线程压缩
+                sourceMap: true, // 开启源码映射
+            })
+        ],
+        splitChunks: { // 分割代码块
+            cacheGroups: { // 缓存组
+                common: { // 公共的模块
+                    chunks: 'initial',
+                    minSize: 0, // 最小多少字节就抽离
+                    minChunks: 2, // 最少被引用多少次就抽离 
+                },
+                vender: { // 第三方模块
+                    priority: 1, // 优先级 相当于 z-index
+                    test: /node_modules/,
+                    chunks: 'initial',
+                    minSize: 0,
+                    minChunks: 2
+                }
+            }
+        }
+    },
+}
