@@ -91,7 +91,6 @@ module.exports = {
         port: 3000,
         progress: true,
         hot: true,
-        inline: true,
         open: false,
         compress: true, // 压缩
         contentBase: './dist', // 指向的目录
@@ -143,7 +142,7 @@ module.exports = {
                     loader: MiniCssExtractPlugin.loader,
                     options: {
                         // 打包后的 css 文件相对于打包后的根路径dist的相对路径
-                        publicPath: '../'
+                        publicPath: '../../'
                     }
                 }, 'css-loader', 'postcss-loader', 'less-loader']
             },
@@ -166,7 +165,8 @@ module.exports = {
                 include: path.resolve(__dirname, 'src')
             },
             // {test: require.resolve('jquery'), loader: 'expose-loader', options: {exposes: ['$', 'jquery']}}
-            { test: /\.(png|jpg|gif|jpeg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'img/', esModule: false } } },
+            { test: /\.(png|jpg|gif|jpeg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/img/', esModule: false } } },
+            { test: /\.(woff|woff2|ttf|eot|svg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/fonts/' } } },
             {
                 test: /\.html$/i,
                 use: {
@@ -215,7 +215,7 @@ module.exports = {
             chunks: ['other']
         }), */
         new MiniCssExtractPlugin({
-            filename: 'css/main.css', // 抽离出去的 css 叫什么名字
+            filename: 'static/css/main.css', // 抽离出去的 css 叫什么名字
         }),
         // new EslintPlugin(),
         new webpack.ProvidePlugin({ // 将 $ 注入每个模块中
@@ -224,8 +224,8 @@ module.exports = {
         new CleanWebpackPlugin(), // 在打包出来之前先清除 dist 目录
         new CopyWebpackPlugin({
             patterns: [
-                { from: './src/doc', to: './doc' },
-                { from: './src/dll', to: './dll' }
+                { from: './src/doc', to: './static/doc' },
+                { from: './src/dll', to: './static/dll' }
             ],
             options: {
                 concurrency: 100, // 并发 100

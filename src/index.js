@@ -18,6 +18,7 @@ const b = () => {
 
 require('./css/index.css');
 require('./less/index.less');
+require('./fonts/iconfont.css');
 
 // class cla {
 //   constructor() {

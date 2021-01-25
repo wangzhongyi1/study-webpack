@@ -319,6 +319,55 @@ module.exports = {
   }
   ```
 
+## webpack 中处理字体图标引入
+  - 将字体图标和 css 打包到同一个文件中。
+    + `yarn add url-loader -D`
+    ```js
+    module.exports = {
+      module: {
+        rules: [
+          {test: /\.(woff|woff2|svg|ttf|eot)$/i, use: {
+            loader: 'url-loader',
+            options: {
+              limit: 100000, // 这里一定要写的足够大，才能将所有的字体图标打包到 css 中
+            }
+          }}
+        ]
+      }
+    }
+    ```
+  - 将字体图标单独打包到一个文件夹中
+    + `yarn add file-loader -D`
+    ```js
+    module.exports = {
+      module: {
+        rules: [
+          // 以下三选一即可
+          {test: /\.(woff|woff2|ttf|svg|eot)/i, use: {
+            loader: 'file-loader',
+            options: {
+              name: 'fonts/[name].[hash:8].[ext]' // 项目设置打包到 dist下的 fonts 文件夹下
+            }
+          }},
+          {test: /\.(woff|woff2|svg|ttf|eot)$/i, use: {
+            loader: 'url-loader',
+            options: {
+              limit: 1, // 这里一定要写很小，这样就会启用 file-loader 来处理了
+              name: 'fonts/[name].[hash:8].[ext]'
+            }
+          }},
+          {test: /\.(woff|woff2|svg|ttf|eot)$/i, use: {
+            loader: 'url-loader',
+            options: {
+              limit: 1, // 这里一定要写很小，这样就会启用 file-loader 来处理了
+              outputPath: 'fonts/'
+            }
+          }}
+        ]
+      }
+    }
+    ```
+
 ## webpack 中打包出来的文件分类
   - 将打包出来的文件按照 css，img 放入对应的文件夹内
   ```js
