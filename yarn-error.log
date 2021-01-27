@@ -1,5 +1,5 @@
 Arguments: 
-  C:\Program Files\nodejs\node.exe C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js add @babel-preset-react -D
+  C:\Program Files\nodejs\node.exe C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js add add-asset-html-webpack-plugin -D
 
 PATH: 
   C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;D:\Git\cmd;C:\Program Files\nodejs\;C:\wamp64\bin\mysql\mysql5.7.14\bin;C:\WINDOWS\System32\OpenSSH\;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;%ANDROID_HOME%\platform-tools;C:\Users\MyPC\AppData\Local\Yarn\bin;D:\Program Files\Android\flutter\bin;E:\TortoiseSVN\bin;E:\Develop\Maven\apache-maven-3.6.0\bin;C:\Users\MyPC\AppData\Local\Microsoft\WindowsApps;Microsoft VS Code\bin;C:\Users\MyPC\AppData\Roaming\npm;D:\Program Files\Java\jdk1.8.0_231\bin;D:\Program Files\Android\SDK\platforms;D:\Program Files\Android\SDK\platform-tools;D:\Program Files\Android\SDK\tools;C:\Program Files\MongoDB\Server\4.2\bin;;D:\软件\Microsoft VS Code\bin
@@ -14,17 +14,8 @@ Platform:
   win32 x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/@babel-preset-react: Request "https://registry.yarnpkg.com/@babel-preset-react" returned a 405
-      at Request.params.callback [as _callback] (C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:66935:18)
-      at Request.self.callback (C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:140564:22)
-      at Request.emit (events.js:209:13)
-      at Request.<anonymous> (C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:141536:10)
-      at Request.emit (events.js:209:13)
-      at IncomingMessage.<anonymous> (C:\Users\MyPC\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:141458:12)
-      at Object.onceWrapper (events.js:298:28)
-      at IncomingMessage.emit (events.js:214:15)
-      at endReadableNT (_stream_readable.js:1178:12)
-      at processTicksAndRejections (internal/process/task_queues.js:80:21)
+  Error: read ECONNRESET
+      at TLSWrap.onStreamRead (internal/stream_base_commons.js:201:27)
 
 npm manifest: 
   {
@@ -35,6 +26,7 @@ npm manifest:
       "scripts": {
           "build": "webpack --config=webpack.prod.js",
           "dev": "webpack-dev-server --config=webpack.dev.js",
+          "dll": "webpack --config=webpack.dll.js",
           "test": "echo \"Error: no test specified\" && exit 1"
       },
       "keywords": [],
@@ -52,6 +44,7 @@ npm manifest:
           "@babel/core": "^7.12.10",
           "@babel/plugin-transform-runtime": "^7.12.10",
           "@babel/preset-env": "^7.12.11",
+          "@babel/preset-react": "^7.12.10",
           "autoprefixer": "^10.2.1",
           "babel-loader": "^8.2.2",
           "clean-webpack-plugin": "^3.0.0",

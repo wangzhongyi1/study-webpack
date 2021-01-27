@@ -17,6 +17,7 @@ const EslintPlugin = require('eslint-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HappyPack = require('happypack');
+const AddAssetHtmlWebpackPlugin = require('add-asset-html-webpack-plugin');
 
 /*
 module.exports = {
@@ -116,7 +117,7 @@ module.exports = {
     },
     output: {
         // [name] home, other
-        filename: '[name][hash:5].js', // 打包后的文件名 [hash:5] 添加 5 位的 hash 戳，防止浏览器缓存和文件覆盖
+        filename: '[name][contenthash].js', // 打包后的文件名 [hash:5] 添加 5 位的 hash 戳，防止浏览器缓存和文件覆盖
         path: path.resolve(__dirname, 'dist'), // 打包后的输出路径 路径必须是一个绝对路径
         // publicPath: '/static'
         // publicPath: './' //指定打包后的资源引用使用相对路径(在本地开发的时候不要打开)
@@ -137,51 +138,57 @@ module.exports = {
             //     }, 'css-loader', 'postcss-loader']
             // },
             {
-                test: /\.(c|le)ss$/,
-                use: [{
-                    loader: MiniCssExtractPlugin.loader,
-                    options: {
-                        // 打包后的 css 文件相对于打包后的根路径dist的相对路径
-                        publicPath: '../../'
-                    }
-                }, 'css-loader', 'postcss-loader', 'less-loader']
-            },
-
-            {
-                test: /\.js$/,
-                use: 'HappyPack/loader?id=babel',
-                // use: {
-                //     loader: 'babel-loader',
-                //     options: { // 用 babel-loader 将 es6 转 es5
-                //         presets: [
-                //             '@babel/preset-env'
-                //         ],
-                //         plugins: [
-                //             '@babel/plugin-transform-runtime'
-                //         ],
-                //     }
-                // },
-                exclude: /node_modules/,
-                include: path.resolve(__dirname, 'src')
-            },
-            // {test: require.resolve('jquery'), loader: 'expose-loader', options: {exposes: ['$', 'jquery']}}
-            { test: /\.(png|jpg|gif|jpeg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/img/', esModule: false } } },
-            { test: /\.(woff|woff2|ttf|eot|svg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/fonts/' } } },
-            {
-                test: /\.html$/i,
-                use: {
-                    loader: 'html-loader',
-                    options: {
-                        attributes: {
-                            list: [{
-                                tag: 'img',
-                                attribute: 'src',
-                                type: 'src'
-                            }]
+                // oneOf 会在以下 loader 命中以后，就停止向下匹配
+                oneOf: [
+                    {
+                        test: /\.(c|le)ss$/,
+                        use: [{
+                            loader: MiniCssExtractPlugin.loader,
+                            options: {
+                                // 打包后的 css 文件相对于打包后的根路径dist的相对路径
+                                publicPath: '../../'
+                            }
+                        }, 'css-loader', 'postcss-loader', 'less-loader']
+                    },
+        
+                    {
+                        test: /\.js$/,
+                        use: 'HappyPack/loader?id=babel',
+                        // use: {
+                        //     loader: 'babel-loader',
+                        //     options: { // 用 babel-loader 将 es6 转 es5
+                        //         presets: [
+                        //             '@babel/preset-env'
+                        //         ],
+                        //         plugins: [
+                        //             '@babel/plugin-transform-runtime'
+                        //         ],
+                        //     }
+                        // },
+                        exclude: /node_modules/,
+                        include: path.resolve(__dirname, 'src')
+                    },
+                    // {test: require.resolve('jquery'), loader: 'expose-loader', options: {exposes: ['$', 'jquery']}}
+                    { test: /\.(png|jpg|gif|jpeg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/img/', esModule: false } } },
+                    { test: /\.(woff|woff2|ttf|eot|svg)$/i, use: { loader: 'url-loader', options: { limit: 1, outputPath: 'static/fonts/' } } },
+                    {
+                        test: /\.html$/i,
+                        use: {
+                            loader: 'html-loader',
+                            options: {
+                                attributes: {
+                                    list: [{
+                                        tag: 'img',
+                                        attribute: 'src',
+                                        type: 'src'
+                                    }]
+                                }
+                            }
                         }
                     }
-                }
-            }
+                ]
+            },
+
         ]
     },
     // externals: {
@@ -215,7 +222,7 @@ module.exports = {
             chunks: ['other']
         }), */
         new MiniCssExtractPlugin({
-            filename: 'static/css/main.css', // 抽离出去的 css 叫什么名字
+            filename: 'static/css/main[contenthash].css', // 抽离出去的 css 叫什么名字
         }),
         // new EslintPlugin(),
         new webpack.ProvidePlugin({ // 将 $ 注入每个模块中
@@ -225,7 +232,7 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: './src/doc', to: './static/doc' },
-                { from: './src/dll', to: './static/dll' }
+                // { from: './src/dll', to: './static/dll' }
             ],
             options: {
                 concurrency: 100, // 并发 100
@@ -246,7 +253,8 @@ module.exports = {
                     ],
                     plugins: [
                         '@babel/plugin-transform-runtime'
-                    ]
+                    ],
+                    cacheDirectory: true, // 开启 babel 缓存，第二次构建的时候，会读取缓存，只更新需要更新的模块
                 }
             }]
         }),
@@ -254,6 +262,9 @@ module.exports = {
         new webpack.DllReferencePlugin({
             manifest: path.resolve(__dirname, 'src/dll', 'manifest.json')
         }),
+        new AddAssetHtmlWebpackPlugin([
+            {filepath: path.resolve(__dirname, 'src/dll/_dll_react.js'), outputPath: './static/dll', publicPath: './static/dll'}
+        ])
         // new webpack.HotModuleReplacementPlugin(), // 热更新插件
     ],
     /* 开启压缩项 */
@@ -274,7 +285,7 @@ module.exports = {
                     minSize: 0, // 最小多少字节就抽离
                     minChunks: 2, // 最少被引用多少次就抽离 
                 },
-                vender: { // 第三方模块
+                venders: { // 第三方模块
                     priority: 1, // 优先级 相当于 z-index
                     test: /node_modules/,
                     chunks: 'initial',

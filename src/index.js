@@ -57,7 +57,8 @@ const button = document.createElement('button');
 button.innerHTML = '按钮';
 button.addEventListener('click', function(e) {
     // es6 草案中语法，jsonp 实现动态加载, 返回的是一个 promise
-    import ('./b.js').then(data => {
+    // webpackPrefetch: true 就开启了预加载，预加载是利用空闲资源提前加载文件，懒加载是使用的时候才去加载文件
+    import (/* webpackChunkName: 'chunk_bjs', webpackPrefetch: true */'./b.js').then(data => {
         console.log(data)
     })
 })

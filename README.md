@@ -139,7 +139,8 @@ module: {
             options: {
               presets: [
                 '@babel/preset-env' // 将 es6 转 es5
-              ]
+              ],
+              cacheDirectory: true, // 开启 babel 缓存，下次打包构建速度更快
             }
           }
         }
@@ -166,7 +167,8 @@ module: {
               ],
               plugins: [
                 '@babel/plugin-transform-runtime'
-              ]
+              ],
+              cacheDirectory: true, // 开启 babel 缓存，下次打包构建速度更快
             }
           },
           exclude: /node_modules/ // 排除匹配 node_modules 中的 js 文件 (打包性能)
@@ -725,9 +727,18 @@ module.exports = {
   ****
   > 如何才能不需要手动引入最后 script 文件，正在寻找和尝试中
   - 解决上面的手动引入的问题，不更改 dist 下的 index.html 文件
-  1. 确保在开发环境和生产环境的 dll/_dll_react.js 和 index.html 文件相对位置一致
-  2. 在 src 下的 index.html 中提前写入 *<script src="./dll/_dll_react.js"></script>*
-  3. 这样只要保证相对位置一致，打包后的引入的路径就不会出错
+  1. `yarn add add-asset-html-webpack-plugin -D`
+  2. 在配置文件中使用这个 plugin
+  ```js
+  const AddAssetHtmlWebpackPlugin = require('add-asset-html-webpack-plugin');
+  module.exports = {
+    plugins: [
+      new AddAssetHtmlWebpackPlugin([
+        {filepath: path.resolve(__dirname, './src/dll/_dll_react.js'), outputPath: './static/dll', publicPath: './static/dll'} // 这样就会在打包后的 html 以 script 引入这个文件
+      ])
+    ]
+  }
+  ```
 
 ## webpack 自带优化 (打包性能)
   - `tree-shaking`
@@ -751,41 +762,76 @@ module.exports = {
     // webpack 会在打包的时候直接将 a + b 的值 3 赋值给 c，只会声明一个变量，并不会声明三个变量。
     ```
 
-  ## webpack 抽离公共代码
-    - 在开发多页应用的时候，如果不同页面都引入了相同的文件，这样就会打包多份相同模块，现在就是将相同的模块抽离出去
-    ```js
-    module.exports = {
-      optimization: {
-        splitChunk: { // 分割代码块
-          cacheGroups: { // 缓存组
-            common: {
-              chunks: 'initial', // 也可以写成异步 async
-              miniSize: 0, // 最小多少字节就抽离
-              miniChunks: 2, // 最少被引用多少次就抽离
-            },
-            vender: { // 第三方模块
-              priority: 1, // 优先级 相当于 z-index
-              test: /node_modules/,
-              chunks: 'async',
-              miniSize: 0,
-              miniChunks: 2,
-            }
+## webpack 抽离公共代码 (code split)
+  - 在开发多页应用的时候，如果不同页面都引入了相同的文件，这样就会打包多份相同模块，现在就是将相同的模块抽离出去
+  - chunks 指拆分模块的范围，它有三个值：async、initial、all。
+    1. async 表示只从异步加载的模块里进行拆分（指动态 import() 加载）
+    2. initial 表示只从入口模块进行拆分
+    3. all 以上两者都包括
+    > 动态 import 一定会拆分出一个新的 chunk , 而且可以实现懒加载
+  ```js
+  module.exports = {
+    optimization: {
+      splitChunk: { // 分割代码块
+        cacheGroups: { // 缓存组
+          common: {
+            chunks: 'initial', // 可以写成异步 async, all, initial
+            miniSize: 0, // 最小多少字节就抽离
+            miniChunks: 2, // 最少被引用多少次就抽离
+          },
+          venders: { // 第三方模块
+            priority: 1, // 优先级 相当于 z-index
+            test: /node_modules/,
+            chunks: 'initial',
+            miniSize: 0,
+            miniChunks: 2,
           }
         }
       }
     }
-    ```
-  ## webpack 实现懒加载
-    - vue 和 react 中的路由懒加载就是基于这个实现的
-    ```js
-    let button = document.createElement('button');
-    button.innerHTML = '按钮';
-    button.addEventListener('click', function (e) {
-      // es6 草案中的语法，原理是 jsonp 实现动态加载文件, 返回的是一个 promise
-      import ('./b.js').then(data => {
-        console.log(data);
-      })
+  }
+  ```
+
+## webpack 实现懒加载和预加载
+  - vue 和 react 中的路由懒加载就是基于这个实现的
+  ```js
+  let button = document.createElement('button');
+  button.innerHTML = '按钮';
+  button.addEventListener('click', function (e) {
+    // es6 草案中的语法，原理是 jsonp 实现动态加载文件, 返回的是一个 promise
+    import (/* webpackChunkName: 'chunk_bjs', webpackPrefetch: true */'./b.js').then(data => {
+      console.log(data);
     })
-    document.body.appendChild(button);
+  })
+  document.body.appendChild(button);
+  ```
+  - 添加了 *webpackPrefetch: true* 就开启了预加载
+  - 懒加载和预加载的区别
+    + 懒加载是在使用的时候才加载对应的文件
+    + 预加载是利用空闲资源提前加载好对应的文件，使用的时候直接从缓存中拿
+
+## webpack oneOf (打包性能)
+  - 在匹配文件的时候，默认会遍历一遍所有的 loader
+  - oneOf 会在 loader 命中的时候就停止遍历
+    + 需注意 oneOf 中不能有两个配置处理同一类型的文件
+    ```js
+    module.exports = {
+      module: {
+        rules: [
+          {
+            oneOf: [
+              {test: /\.css$/, use: ['style-loader','css-loader']}
+            ]
+          }
+        ]
+      }
+    }
     ```
-  
+
+## webpack 中的 hash chunkhash contenthash 区别
+  - hash：webpack 每次打包构建时会生成唯一的 hash 值。缺点：一个文件改变，所有文件的 hash 值都变化
+  - chunkhash：根据 chunk 生成 hash 值，同一个 chunk 的文件hash值一样。缺点：一个文件改变，同一 chunk 下的文件hash值都改变
+  - contenthash：根据文件内容生成 hash 值，一个文件改变，只改变该文件的 hash 值，不影响其他文件。
+
+## 
+
