@@ -117,8 +117,9 @@ module.exports = {
     },
     output: {
         // [name] home, other
-        filename: '[name][contenthash].js', // 打包后的文件名 [hash:5] 添加 5 位的 hash 戳，防止浏览器缓存和文件覆盖
+        filename: 'static/js/[name][contenthash].js', // 打包后的文件名 [hash:5] 添加 5 位的 hash 戳，防止浏览器缓存和文件覆盖
         path: path.resolve(__dirname, 'dist'), // 打包后的输出路径 路径必须是一个绝对路径
+        chunkFilename: 'static/js/chunks/[name][contenthash].js'
         // publicPath: '/static'
         // publicPath: './' //指定打包后的资源引用使用相对路径(在本地开发的时候不要打开)
     },
@@ -207,6 +208,7 @@ module.exports = {
             minify: { // 让打包后的 html 也进行压缩
                 removeAttributeQuotes: true, // 删除 html 属性多余空格
                 collapseWhitespace: true, // 一行展示
+                removeComments: true, // 删除注释
             },
             hash: true, // 添加 hash 戳
             // chunks: ['home']
