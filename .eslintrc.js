@@ -17,7 +17,8 @@ module.exports = {
   env: {
     es6: true,
     node: true,
-    mocha: true
+    mocha: true,
+    browser: true,
   },
   extends: ['plugin:eslint-plugin/recommended'],
   // extends: ['plugin:eslint-plugin/recommended', 'prettier'],

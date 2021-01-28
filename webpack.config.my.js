@@ -11,7 +11,6 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
-const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const EslintPlugin = require('eslint-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -66,7 +65,6 @@ module.exports = {
     optimization: {
         minimizer: [
             new CssMinimizerPlugin(),
-            new OptimizeCssAssetsPlugin(),
             new UglifyJsPlugin({
                 cache: true,
                 parallel: true,
@@ -106,8 +104,9 @@ module.exports = {
             }
         }
     },
+    // 配置解析规则
     resolve: {
-        modules: [path.resolve(__dirname, 'node_modules')],
+        modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],// 告诉 webpack 解析模块去哪个目录找，找不到会一直向上级目录找
         extensions: ['.js', '.json', '.css'],
         alias: {
             'bootstrap': 'bootstrap/dist/css/bootstrap.css'
@@ -250,11 +249,41 @@ module.exports = {
                 loader: 'babel-loader',
                 options: {
                     presets: [
-                        '@babel/preset-env',
+                        // '@babel/preset-env',
+                        [
+                            '@babel/preset-env',
+                            {
+                                modules: false, // 对ES6的模块文件不做转化，以便使用tree shaking、sideEffects等
+                                // corejs: 3,
+                                // // 仅引入使用的语法转换
+                                // useBuiltIns: 'usage', // or 'entry'
+                                // // 需要兼容的浏览器
+                                // targets: {
+                                //     chrome: '60',
+                                //     firefox: '60',
+                                //     ie: '9',
+                                //     safari: '10',
+                                //     edge: '17'
+                                // }
+                            },
+                        ],
                         '@babel/preset-react'
                     ],
                     plugins: [
-                        '@babel/plugin-transform-runtime'
+                        // '@babel/plugin-transform-runtime'
+                        [
+                            '@babel/plugin-transform-runtime',
+                            {
+                                // 配置 corejs: 3, 需要预先安装 @babel/runtime-corejs3
+                                // 配置 corejs: 2, 需要预先安装 @babel/runtime-corejs2
+                                // 配置 corejs: false, 需要预先安装 @babel/runtime
+                                corejs: {
+                                    version: 3,
+                                    proposals: true
+                                },
+                                useESModules: true
+                            }
+                        ]
                     ],
                     cacheDirectory: true, // 开启 babel 缓存，第二次构建的时候，会读取缓存，只更新需要更新的模块
                 }
@@ -273,7 +302,6 @@ module.exports = {
     optimization: {
         minimizer: [
             new CssMinimizerPlugin(), // 压缩 css
-            new OptimizeCssAssetsPlugin(), // 压缩 js
             new UglifyJsPlugin({
                 cache: true,
                 parallel: true, // 开启多线程压缩
@@ -294,6 +322,13 @@ module.exports = {
                     minSize: 0,
                     minChunks: 2
                 }
+            }
+        },
+        // 分割 chunk 后，当前模块依赖引入其他模块的话，会记录其他模块的hash值，通过hash来引入其他模块
+        // 这样依赖的模块改变的话，会带着当前模块一起改变，使用runtimeChunk 可以解决这个问题，将 hash 单独打包成一个文件
+        runtimeChunk: {
+            name: function (entrypoint) {
+                return 'runtime-' + entrypoint.name
             }
         }
     },

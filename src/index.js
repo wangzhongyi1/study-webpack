@@ -33,7 +33,7 @@ require('./fonts/iconfont.css');
 function* gen() {
     yield 1
 }
-console.log(gen.next);
+console.log(gen().next());
 
 // const p = new Promise((resolve, reject) => {
 //   setTimeout(() => {

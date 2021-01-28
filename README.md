@@ -125,8 +125,9 @@ module: {
   ```
 
 ## webpack es6 转 es5
-- es6 转 es5
+- es6 转 es5 --> 语法转换
   + `yarn add babel-loader @babel/core @babel-preset-env -D`
+  + `yarn add core-js@3 -S`
   + 在 webpack.config.js 中配置 loader
   ```js
   module.exports = {
@@ -138,23 +139,26 @@ module: {
             loader: 'babel-loader',
             options: {
               presets: [
-                '@babel/preset-env' // 将 es6 转 es5
+                '@babel/preset-env',
+                '@babel/preset-react'
               ],
               cacheDirectory: true, // 开启 babel 缓存，下次打包构建速度更快
             }
-          }
+          },
+          exclude: /node_modules/, // 排除匹配 node_modules 中的 js 文件 (打包性能)
+          include: path.resolve(__dirname, 'src') // 只匹配 src 目录下的 js 文件 (打包性能)
         }
       ]
     }
   }
   ```
 
-- es7 转 es5
-  + 诸如 async/await 或 generator 函数是 es7 的东西，需要另外转换
-  + `yarn add @babel/plugin-transform-runtime -D` 和 `yarn add  @babel/runtime -S` 一个是开发时候使用，一个是要带到线上使用的 polyfill
+- es6 转 es5 --> api 转换
+  + es6 转 es5，分为高级语法转化低级语法，和高级 api 转化成低级 api
+  + 有以下两种方案可以达到目的
+  1. `yarn add @babel/plugin-transform-runtime -D` 和 `yarn add @babel/runtime-corejs3 -S`
   ```js
-    const path = require('path');
-    module.exports = {
+  module.exports = {
     module: {
       rules: [
         {
@@ -162,36 +166,101 @@ module: {
           use: {
             loader: 'babel-loader',
             options: {
-              presets: [
-                '@babel/preset-env' // 将 es6 转 es5
+              presets:[
+                [
+                  '@babel/preset-env',
+                  {
+                    modules: false
+                  }
+                ],
+                '@babel/preset-react'
               ],
               plugins: [
-                '@babel/plugin-transform-runtime'
+                '@babel/plugin-transform-runtime',
+                {
+                  // 配置 corejs: 3, 需要预先安装 @babel/runtime-core3
+                  // 配置 corejs: 2, 需要预先安装 @babel/runtime-core2
+                  // 配置 corejs: false, 需要预先安装 @babel/runtime
+                  corejs: {
+                    version: 3,
+                    proposals: true
+                  },
+                  useESModules: true
+                }
               ],
-              cacheDirectory: true, // 开启 babel 缓存，下次打包构建速度更快
+              cacheDirectory: true
             }
           },
-          exclude: /node_modules/ // 排除匹配 node_modules 中的 js 文件 (打包性能)
-          include: path.resolve(__dirname, 'src') // 只匹配 src 目录下的 js 文件 (打包性能)
+          exclude: /node_modules/, // 排除匹配 node_modules 中的 js 文件 (打包性能)
+          include: path.resolve(__dirname, 'src'), // 只匹配 src 目录下的 js 文件 (打包性能)
         }
       ]
     }
   }
-  ``` 
-
-- 如果你要使用 如 **'aaa'.includes('a')** 或者 **Array.from()** 等 es6 实例上的方法，需要使用另一个 polyfill
-  + `yarn add @babel/polyfill -S`
-  + 使用方式有两种：
-    1. 在 项目的入口文件 index.js 的顶部引入
+  ```
+  2. 有新旧两种方式
+  - 新方式：`yarn add core-js regenerator-runtime -S`
+    + 在 index.js 的顶部引入
     ```js
-    require('@babel/polyfill');
+    import 'core-js/stable'
+    import 'regenerator-runtime/runtime'
     ```
-    2. 在 webpack 配置文件中的 entry 字段添加
+    + 在 webpack 配置文件中
     ```js
-    module.exports = {
-      entry: ['@babel/polyfill', './src/index.js']
-    }
+      module.exports = {
+        module: {
+          rules: [
+            {
+              test: /\.js$/,
+              use: {
+                loader: 'babel-loader',
+                options: {
+                  presets: [
+                    [
+                      '@babel/preset-env',
+                      {
+                        modules: false, // 对ES6的模块文件不做转化，以便使用tree shaking、sideEffects等
+                        corejs: 3,
+                        // 仅引入代码中使用到的高级语法进行转换
+                        useBuiltIns: 'usage', // or 'entry'
+                        // 需要兼容的浏览器
+                        targets: {
+                            chrome: '60',
+                            firefox: '60',
+                            ie: '9',
+                            safari: '10',
+                            edge: '17'
+                        }
+                      }
+                    ],
+                    '@babel/preset-react'
+                  ],
+                  cacheDirectory: true, // 开启 babel 缓存，下次打包构建速度更快
+                }
+              },
+              exclude: /node_modules/, // 排除匹配 node_modules 中的 js 文件 (打包性能)
+              include: path.resolve(__dirname, 'src') // 只匹配 src 目录下的 js 文件 (打包性能)
+            }
+          ]
+        }
+      }
     ```
+  - 旧方式：`yarn add @babel/polyfill -S`
+    + 使用方式有两种：
+      1. 在 项目的入口文件 index.js 的顶部引入
+      ```js
+      require('@babel/polyfill');
+      ```
+      2. 在 webpack 配置文件中的 entry 字段添加
+      ```js
+      module.exports = {
+        entry: ['@babel/polyfill', './src/index.js']
+      }
+      ```
+> 总结：转义 ES 新语法 + 新API，有以下两套方案：<br>
+> 方案1：@babel/preset-env + @babel/polyfill <br>
+> 方案2：@babel/preset-env + @babel/plugin-transform-runtime + @babel/runtime-corejs3 <br>
+> 参考：https://segmentfault.com/a/1190000020237817
 
 - webpack 中配置 eslint，启用代码校验
   + `yarn add eslint eslint-webpack-plugin -D`
@@ -666,7 +735,11 @@ module.exports = {
             loader: 'babel-loader',
             options: {
               presets: [
-                '@babel/preset-env'
+                '@babel/preset-env',
+                {
+                    // 仅引入使用的语法转换
+                    useBuiltIns: 'usage'
+                },
               ],
               plugins: [
                 '@babel/plugin-transform-runtime'
@@ -695,8 +768,8 @@ module.exports = {
       output: {
         filename: '_dll_[name].js',
         path: path.resolve(__dirname, 'src/dll'),
-        library: '_dll_[name]', // 赋值的变量名称
-        libraryTarget: 'var', // 规范：commonjs var this ...
+        library: '_dll_[name]', // 赋值的变量名称|向外暴露的变量名
+        libraryTarget: 'var', // 规范：commonjs var this window ...
       },
       plugins: [
         new webpack.DllPlugin({
@@ -769,6 +842,7 @@ module.exports = {
     2. initial 表示只从入口模块进行拆分
     3. all 以上两者都包括
     > 动态 import 一定会拆分出一个新的 chunk , 而且可以实现懒加载
+  - 还需要配合 `runtimeChunk` 来优化 
   ```js
   module.exports = {
     optimization: {
@@ -787,6 +861,14 @@ module.exports = {
             miniChunks: 2,
           }
         }
+      },
+      // 分割 chunk 后，当前模块依赖引入其他模块的话，会记录其他模块的hash值，通过hash来引入其他模块
+      // 这样依赖的模块改变的话，会带着当前模块一起改变，使用runtimeChunk 可以解决这个问题，将 hash 单独打包成一个文件
+      runtimeChunk: {
+          name: function (entrypoint) {
+              console.log('entrypoint:',entrypoint);
+              return 'runtime-' + entrypoint.name
+          }
       }
     }
   }

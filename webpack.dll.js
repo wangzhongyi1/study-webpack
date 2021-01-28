@@ -9,8 +9,8 @@ module.exports = {
     output: {
         filename: '_dll_[name].js',
         path: path.resolve(__dirname, 'src/dll'),
-        library: '_dll_[name]', // 赋值的变量名称 _dll_react
-        libraryTarget: 'var', // 规范：commonjs var this
+        library: '_dll_[name]', // 向外暴露的变量名 _dll_react
+        libraryTarget: 'var', // 规范：commonjs var this window
     },
     plugins: [
         new webpack.DllPlugin({
