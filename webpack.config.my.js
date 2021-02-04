@@ -201,6 +201,7 @@ module.exports = {
     // devtool: 'nosources-source-map', // 增加映射文件，可以帮我们调试源代码
     // 放所有 webpack 插件
     plugins: [
+        /* 创建应用程序的 html 入口文件 */
         new HtmlWebpackPlugin({
             template: './src/index.html',
             filename: 'index.html',

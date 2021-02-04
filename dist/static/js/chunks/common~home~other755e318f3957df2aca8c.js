@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[0],{6:function(n,o){n.exports=function(){console.log("a.js content is ...")},n.exports.pitch=function(){console.log("this function in on a.js")}}}]);

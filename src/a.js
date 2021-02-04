@@ -7,5 +7,4 @@
  * @FilePath: \vue源码实现d:\Backup\桌面\常用重要文件\StudySpace\webpack_study\src\a.js
  */
 
-// console.log('a.js', $) // eslint-disable-line
-module.exports = 'wzy';
+console.log('a.js', $) // eslint-disable-line
