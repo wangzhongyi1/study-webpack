@@ -9,7 +9,6 @@ class AsyncParallelHook { // 异步并发钩子
 
   tapAsync (name, task) {
     this.tasks.push(task);
-    this.count++
   }
 
   callAsync (...args) { // ...args => ['wzy', fn]

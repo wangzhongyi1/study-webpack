@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://webpack-dev/./src/index.less"],"names":[],"mappings":"AACA;EACE;EACA;AAAF","file":"main.css","sourcesContent":["@color: red;\nbody {\n  background-color: @color;\n  background-image: url('./er.png');\n}"],"sourceRoot":""}
