@@ -60,8 +60,8 @@ module: {
   }
   ``` 
 
-- 给 css 属性自动加浏览器前缀
-  + `yarn add postcss-loader autoprefixer -D`
+- 给 css 属性自动加浏览器前缀方式一
+  + `yarn add postcss postcss-loader autoprefixer -D`
   + 在 pakage.json 中 添加
   ```json
   {
@@ -75,6 +75,12 @@ module: {
     ],
   }
   ```
+  + 在根目录新建 `postcss.config.js` 文件，并配置如下：
+  ```js
+  module.exports = {
+    plugins: [require('autoprefixer')]
+  }
+  ```
   + 在 css-loader 之前添加 postcss-loader (从右往左解析 loader)
   ```js
     module: {
@@ -83,6 +89,46 @@ module: {
         { test: /\.less$/, use: ['style-loader','css-loader','postcss-loader','less-loader'] }
       ]
     },
+  ```
+- 给 css 属性自动加浏览器前缀方式二
+  + `yarn add postcss postcss-loader postcss-preset-env -D`
+  ```js
+  module.exports = {
+    module: {
+      rules: [
+        {
+          test: /\.(css|less)$/,
+          use: [
+            'style-loader',
+            'css-loader',
+            {
+              loader: 'postcss-loader',
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    [
+                      'postcss-preset-env',
+                      {
+                        browsers: [
+                          "defaults",
+                          "not ie < 8",
+                          "last 2 versions",
+                          "> 1%",
+                          "iOS 7",
+                          "last 3 iOS versions"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              }
+            },
+            'less-loader'
+          ]
+        }
+      ]
+    }
+  }
   ```
 
 - 使用 ***mini-css-extract-plugin*** 插件后分离出来的 css 文件进行压缩 (打包性能)
@@ -261,6 +307,46 @@ module: {
 > 方案1：@babel/preset-env + @babel/polyfill <br>
 > 方案2：@babel/preset-env + @babel/plugin-transform-runtime + @babel/runtime-corejs3 <br>
 > 参考：https://segmentfault.com/a/1190000020237817
+
+- webpack5 中配置 babel 的方案
+  + `yarn add @babel/core @babel/preset-env babel-loader core-js -D`
+  ```js
+  module.exports = {
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                [
+                  '@babel/preset-env',
+                  {
+                    modules: false, // 对 es6 模块化不进行处理，有利于webpack进行tree-shaking
+                    useBuiltIns: 'usage',
+                    corejs: {
+                      version: 3,
+                      proposals: true
+                    },
+                    // 需要兼容的浏览器
+                    targets: {
+                      chrome: '60',
+                      firefox: '60',
+                      ie: '9',
+                      safari: '10',
+                      edge: '17'
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+  ```
 
 - webpack 中配置 eslint，启用代码校验
   + `yarn add eslint eslint-webpack-plugin -D`
