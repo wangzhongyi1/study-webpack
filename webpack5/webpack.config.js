@@ -16,8 +16,10 @@ const {VueLoaderPlugin} = require('vue-loader')
 //     }
 // })
 
+const env = process.env.NODE_ENV;
+
 module.exports = {
-    mode: 'production',
+    mode: env,
     entry: './src/main.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
