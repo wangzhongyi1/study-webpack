@@ -1,0 +1,10 @@
+{
+  "name": "lodash",
+  "type": "var",
+  "content": {
+    "./node_modules/lodash/lodash.js": {
+      "id": 486,
+      "buildMeta": {}
+    }
+  }
+}
